@@ -2,12 +2,17 @@
 #include "LTI.h"
 #include <cmath>
 #include <iostream>
+#include <algorithm>
 #include <fstream>
 
-#define H_VALUE   0.01
-#define MASS      1
-#define GRAVITY   10
-#define F_APPLIED 5
+#define H_VALUE      0.01
+#define KP_VALUE     90
+#define MASS         1
+#define GRAVITY      10
+#define F_APPLIED    5
+#define GOAL_HEIGHT  5
+#define START_HEIGHT 10
+#define START_SPEED  1
 
 class SimWriter {
 
@@ -31,6 +36,11 @@ public:
   }
 };
 
+float get_force(float error)
+{
+  return fmax(KP_VALUE*error, 0);
+}
+
 void simulate_ball(void)
 {
   Eigen::MatrixXd A(2, 2);
@@ -41,7 +51,7 @@ void simulate_ball(void)
   A << 1,H_VALUE, 0,1;
   B << 0,H_VALUE;
   C << 1,0;
-  x << 10,1;
+  x << START_HEIGHT,START_SPEED;
 
   LTISystem lti(A, B, C);
   lti.init(x);
@@ -49,14 +59,20 @@ void simulate_ball(void)
   SimWriter writer;
 
   Eigen::VectorXd u(1, 1);
-  u << (F_APPLIED/MASS - GRAVITY);
+  u[0] = (get_force(0)/MASS - GRAVITY);
 
   Eigen::VectorXd y(1, 1);
   Eigen::VectorXd state(2, 1);
+
+  float error;
   for (int i = 0; i < 1000; i++) {
+    state = lti.state();
     lti.update(u);
     y = lti.output();
-    state = lti.state();
+
+    error = GOAL_HEIGHT - y[0];
+    u[0] = (get_force(error)/MASS - GRAVITY);
+    std::cout << error << "," << u[0] << std::endl;
 
     writer.write(H_VALUE*i, y[0], state[1], 0, 0);
 
