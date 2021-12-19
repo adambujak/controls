@@ -86,8 +86,8 @@ static PID pid(0,0,0);
 float get_force(float error)
 {
   float pid_output = pid.get_output(error);
-  return pid_output;
-  //return fmax(pid_output, 0);
+  //return pid_output;
+  return fmax(pid_output, 0);
 }
 
 void simulate_ball(float h0, float v0, float hf)
