@@ -1,4 +1,4 @@
-make ARGS="25 0.35 6" run && gnuplot plot.plt
+make ARGS="25 0.35 6 10 0 5" run && gnuplot plot.plt
 
 kp = 25
 ki = 0.35

@@ -90,7 +90,7 @@ float get_force(float error)
   //return fmax(pid_output, 0);
 }
 
-void simulate_ball(void)
+void simulate_ball(float h0, float v0, float hf)
 {
   Eigen::MatrixXd A(2, 2);
   Eigen::MatrixXd B(2, 1);
@@ -100,7 +100,7 @@ void simulate_ball(void)
   A << 1,H_VALUE, 0,1;
   B << 0,H_VALUE;
   C << 1,0;
-  x << START_HEIGHT,START_SPEED;
+  x << h0,v0;
 
   LTISystem lti(A, B, C);
   lti.init(x);
@@ -120,7 +120,7 @@ void simulate_ball(void)
     lti.update(u);
     y = lti.output();
 
-    error = GOAL_HEIGHT - y[0];
+    error = hf - y[0];
 
     u[0] = (get_force(error)/MASS - GRAVITY);
     //std::cout << error << "," << u[0] << std::endl;
@@ -140,19 +140,25 @@ int main(int argc, char *argv[])
   float kp = std::stof(argv[1]);
   float ki = std::stof(argv[2]);
   float kd = std::stof(argv[3]);
+  float h0 = std::stof(argv[4]); // starting height
+  float v0 = std::stof(argv[5]); // starting speed (up is positive)
+  float hf = std::stof(argv[6]); // final height
 
   std::cout << "kp: " << argv[1] << std::endl;
   std::cout << "ki: " << argv[2] << std::endl;
   std::cout << "kd: " << argv[3] << std::endl;
+  std::cout << "h0: " << argv[4] << std::endl;
+  std::cout << "v0: " << argv[5] << std::endl;
+  std::cout << "hf: " << argv[6] << std::endl;
 
   pid.set_gains(kp, ki, kd);
 
-  if (argc != 4) {
+  if (argc != 7) {
     return 1;
   }
 
   std::cout << "started" << std::endl;
-  simulate_ball();
+  simulate_ball(h0, v0, hf);
 
   return 0;
 }
