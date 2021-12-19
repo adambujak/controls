@@ -6,7 +6,7 @@
 #include <fstream>
 
 #define H_VALUE      0.01
-#define KP_VALUE     90
+
 #define MASS         1
 #define GRAVITY      10
 #define F_APPLIED    5
@@ -36,9 +36,58 @@ public:
   }
 };
 
+class PID {
+private:
+  float i_error;
+  float d_error;
+  float last_error;
+  float kp;
+  float kd;
+  float ki;
+  int i;
+
+public:
+  PID(float kp, float ki, float kd)
+  {
+    this->kp = kp;
+    this->kd = kd;
+    this->ki = ki;
+    this->i_error = 0;
+    this->d_error = 0;
+    this->last_error = 0;
+    this->i = 0;
+  }
+
+  void set_gains(float kp, float ki, float kd)
+  {
+    this->kp = kp;
+    this->kd = kd;
+    this->ki = ki;
+  }
+
+  float get_output(float error)
+  {
+    // If index 0 derivate => 0
+    if (this->i == 0) {
+      this->last_error = error;
+    }
+
+    this->i_error += error;
+    this->d_error = (error - this->last_error) / H_VALUE;
+    this->last_error = error;
+    this->i++;
+
+    return (this->kp *error) + (this->kd * this->d_error) + (this->ki * this->i_error);
+  }
+};
+
+static PID pid(0,0,0);
+
 float get_force(float error)
 {
-  return fmax(KP_VALUE*error, 0);
+  float pid_output = pid.get_output(error);
+  return pid_output;
+  //return fmax(pid_output, 0);
 }
 
 void simulate_ball(void)
@@ -65,14 +114,16 @@ void simulate_ball(void)
   Eigen::VectorXd state(2, 1);
 
   float error;
+
   for (int i = 0; i < 1000; i++) {
     state = lti.state();
     lti.update(u);
     y = lti.output();
 
     error = GOAL_HEIGHT - y[0];
+
     u[0] = (get_force(error)/MASS - GRAVITY);
-    std::cout << error << "," << u[0] << std::endl;
+    //std::cout << error << "," << u[0] << std::endl;
 
     writer.write(H_VALUE*i, y[0], state[1], 0, 0);
 
@@ -82,8 +133,23 @@ void simulate_ball(void)
   }
 }
 
-int main()
+int main(int argc, char *argv[])
 {
+  std::cout << "argc: " << argc << std::endl;
+
+  float kp = std::stof(argv[1]);
+  float ki = std::stof(argv[2]);
+  float kd = std::stof(argv[3]);
+
+  std::cout << "kp: " << argv[1] << std::endl;
+  std::cout << "ki: " << argv[2] << std::endl;
+  std::cout << "kd: " << argv[3] << std::endl;
+
+  pid.set_gains(kp, ki, kd);
+
+  if (argc != 4) {
+    return 1;
+  }
 
   std::cout << "started" << std::endl;
   simulate_ball();
