@@ -44,17 +44,26 @@ private:
   float kp;
   float kd;
   float ki;
+  // discrete pid gains
+  float a;
+  float b;
+  float c;
+  // pid memory
+  float e1; // last error
+  float e2; // second last error
+  float u1; // last output
   int i;
+
 
 public:
   PID(float kp, float ki, float kd)
   {
-    this->kp = kp;
-    this->kd = kd;
-    this->ki = ki;
+    this->set_gains(kp, ki, kd);
     this->i_error = 0;
     this->d_error = 0;
-    this->last_error = 0;
+    this->e1 = 0;
+    this->e2 = 0;
+    this->u1 = 0;
     this->i = 0;
   }
 
@@ -63,21 +72,31 @@ public:
     this->kp = kp;
     this->kd = kd;
     this->ki = ki;
+
+    this->a = this->kp + this->ki*H_VALUE/2 + this->kd/H_VALUE;
+    this->b = -1*this->kp + this->ki*H_VALUE/2 - 2*this->kd/H_VALUE;
+    this->c = this->kd/H_VALUE;
   }
 
   float get_output(float error)
   {
     // If index 0 derivate => 0
-    if (this->i == 0) {
-      this->last_error = error;
-    }
+   // if (this->i == 0) {
+   //   this->e1 = error;
+   // }
 
-    this->i_error += error;
-    this->d_error = (error - this->last_error) / H_VALUE;
-    this->last_error = error;
+    //this->i_error += error;
+    //this->d_error = (error - this->last_error) / H_VALUE;
+    //this->last_error = error;
     this->i++;
 
-    return (this->kp *error) + (this->kd * this->d_error) + (this->ki * this->i_error);
+    float output = this->u1 + this->a*error + this->b*this->e1 + this->c*this->e2;
+
+    this->e2 = this->e1;
+    this->e1 = error;
+    this->u1 = output;
+
+    return output;
   }
 };
 
