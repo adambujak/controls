@@ -38,9 +38,6 @@ public:
 
 class PID {
 private:
-  float i_error;
-  float d_error;
-  float last_error;
   float kp;
   float kd;
   float ki;
@@ -59,8 +56,6 @@ public:
   PID(float kp, float ki, float kd)
   {
     this->set_gains(kp, ki, kd);
-    this->i_error = 0;
-    this->d_error = 0;
     this->e1 = 0;
     this->e2 = 0;
     this->u1 = 0;
@@ -80,14 +75,6 @@ public:
 
   float get_output(float error)
   {
-    // If index 0 derivate => 0
-   // if (this->i == 0) {
-   //   this->e1 = error;
-   // }
-
-    //this->i_error += error;
-    //this->d_error = (error - this->last_error) / H_VALUE;
-    //this->last_error = error;
     this->i++;
 
     float output = this->u1 + this->a*error + this->b*this->e1 + this->c*this->e2;
